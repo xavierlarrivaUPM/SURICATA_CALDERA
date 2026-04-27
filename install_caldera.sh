@@ -66,6 +66,19 @@ deactivate
 cp /tmp/config/caldera_config.yml "${CALDERA_DIR}/conf/default.yml"
 chown "${CALDERA_USER}:${CALDERA_USER}" "${CALDERA_DIR}/conf/default.yml"
 
+# ── Build magma frontend (required before starting Caldera) ──────────────────
+echo ">>> Building magma frontend..."
+MAGMA_PATH="${CALDERA_DIR}/plugins/magma"
+rm -rf "${MAGMA_PATH}/node_modules" "${MAGMA_PATH}/dist"
+export NODE_OPTIONS="--max-old-space-size=4096"
+sudo -u "${CALDERA_USER}" bash -lc "cd ${MAGMA_PATH} && npm install --no-audit --no-fund && npm run build"
+unset NODE_OPTIONS
+if [ ! -d "${MAGMA_PATH}/dist" ]; then
+  echo "ERROR: Magma build failed - dist directory not created!"
+  exit 1
+fi
+echo ">>> Magma build complete."
+
 # ── Create systemd service ────────────────────────────────────────────────────
 cat > /etc/systemd/system/caldera.service <<EOF
 [Unit]
